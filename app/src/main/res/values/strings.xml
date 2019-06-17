@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Healthcare</string>
+    <string name="title_patientcondition_list">PatientConditions</string>
+    <string name="title_patientcondition_detail">PatientCondition Detail</string>
+</resources>
