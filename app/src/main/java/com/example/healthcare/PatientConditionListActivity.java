@@ -1,9 +1,12 @@
 package com.example.healthcare;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.OvalShape;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.AppBarLayout;
@@ -16,15 +19,12 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.healthcare.dummy.PatientListTitle;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -47,7 +47,10 @@ import javax.annotation.Nullable;
  * lead to a {@link PatientConditionDetailActivity} representing
  * item details. On tablets, the activity presents the list of items and
  * item details side-by-side using two vertical panes.
+ *
+ * TODO may change the recyclerView, check if possible to populate one item at a time, can delete item by position in patientListTile
  */
+
 public class PatientConditionListActivity extends AppCompatActivity {
 
     /**
@@ -159,28 +162,43 @@ public class PatientConditionListActivity extends AppCompatActivity {
                                         if (documentSnapshot.exists()){
                                             final PatientListTitle.DummyItem patient;
                                             if (!PatientListTitle.ITEM_MAP.containsKey(patientUID)){
-                                                patient = PatientListTitle.addItem(patientUID,null,null);
+                                                patient = PatientListTitle.addItem(patientUID,colorRange.NO_COLOR,null);
                                                 patient.setPosition(PatientListTitle.ITEMS.indexOf(patient));
                                             }else{
                                                 patient = PatientListTitle.ITEM_MAP.get(patientUID);
                                             }
                                             String latestUpdateTime = documentSnapshot.getString("latestUpdateTime");
                                             HashMap<String,Object> recentCondition = (HashMap<String,Object>) documentSnapshot.getData().get(latestUpdateTime);
-                                            if (recentCondition.containsKey("changedRange")) {
+                                            if (recentCondition!=null && recentCondition.containsKey("changedRange")) {
                                                 List<String> changedRanges = (List<String>) recentCondition.get("changedRange");
-                                                if (changedRanges != null && changedRanges.size() > 0 && recentCondition.containsKey("ranges")) {
+                                                if (changedRanges != null && changedRanges.size()>0){
+                                                    alertInfoPopup("patient update info",patientUID);
+                                                }
+                                                /*if (changedRanges != null && recentCondition.containsKey("ranges")) {
                                                     for (String changedRange : changedRanges) {
                                                         HashMap<String, String> ranges = (HashMap<String, String>) recentCondition.get("ranges");
                                                         if (ranges != null && ranges.containsKey(changedRange)) {
                                                             String color = ranges.get(changedRange);
                                                             if (color != null){
+
                                                                 colorRange conditionColor =colorRange.valueOf(color.toUpperCase());
                                                                 patient.setConditionColor(conditionColor);
                                                             }
 
                                                         }
                                                     }
+                                                }*/
+                                            }
+                                            if (recentCondition!=null && recentCondition.containsKey("ranges")) {
+                                                HashMap<String, String> ranges = (HashMap<String, String>) recentCondition.get("ranges");
+                                                colorRange color = colorRange.NO_COLOR;
+                                                for (Map.Entry range : ranges.entrySet()){
+                                                    colorRange tempColor = colorRange.valueOf(range.getValue().toString().toUpperCase());
+                                                    if(tempColor.getLevel() > color.getLevel()){
+                                                        color=tempColor;
+                                                    }
                                                 }
+                                                patient.setConditionColor(color);
                                             }
                                             FirebaseFirestore db = FirebaseFirestore.getInstance();
                                             DocumentReference patientRef = db.document("users/" + patientUID);
@@ -283,6 +301,37 @@ public class PatientConditionListActivity extends AppCompatActivity {
         });*/
 
     }
+    public void alertInfoPopup(String text, final String patientUID){
+        if (text == null){return;}
+        new AlertDialog.Builder(this,AlertDialog.THEME_TRADITIONAL)
+                .setTitle("Patient Condition Updated")
+                .setMessage(text)
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (mTwoPane) {
+                            Bundle arguments = new Bundle();
+                            arguments.putString(PatientConditionDetailFragment.ARG_ITEM_ID, patientUID);
+                            PatientConditionDetailFragment fragment = new PatientConditionDetailFragment();
+                            fragment.setArguments(arguments);
+                            getSupportFragmentManager().beginTransaction()
+                                    .replace(R.id.patientcondition_detail_container, fragment)
+                                    .commit();
+                        } else {
+//                            Context context = view.getContext();
+                            Intent intent = new Intent(getApplicationContext(), PatientConditionDetailActivity.class);
+                            intent.putExtra(PatientConditionDetailFragment.ARG_ITEM_ID, patientUID);
+
+//                            context.startActivity(intent);
+                            startActivity(intent);
+                        }
+                    }
+                })
+
+                // A null listener allows the button to dismiss the dialog and take no further action.
+                .setNegativeButton(android.R.string.no, null)
+                .setIcon(android.R.drawable.btn_star)
+                .show();
+    }
 
     public static class SimpleItemRecyclerViewAdapter
             extends RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder> {
@@ -331,28 +380,28 @@ public class PatientConditionListActivity extends AppCompatActivity {
         //populate	the	view hierarchy	within	the	ViewHolder	object	with	the	data	to	be	displayed
         @Override
         public void onBindViewHolder(final ViewHolder holder, int position) {
-            GradientDrawable gd = getRangeCircle(mValues.get(position).getConditionColor());
-            holder.colorRangeView.setImageDrawable(gd);
+            ShapeDrawable sd = getRangeCircle(mValues.get(position).getConditionColor());
+            holder.colorRangeView.setBackground(sd);
             holder.patientNameView.setText(mValues.get(position).getPatientName());
 
             holder.itemView.setTag(mValues.get(position));
             holder.itemView.setOnClickListener(mOnClickListener);
         }
-        private GradientDrawable getRangeCircle(colorRange color){
-            GradientDrawable gd = new GradientDrawable();
-            gd.setShape(GradientDrawable.OVAL);
+        private ShapeDrawable getRangeCircle(colorRange color){
+            ShapeDrawable sd = new ShapeDrawable(new OvalShape());
+            sd.setIntrinsicHeight(100);
+            sd.setIntrinsicWidth(100);
             if (color == colorRange.RED) {
-                gd.setColor(Color.RED);
+                sd.getPaint().setColor(Color.RED);
             }else if (color == colorRange.GREEN) {
-                gd.setColor(Color.GREEN);
+                sd.getPaint().setColor(Color.GREEN);
             }else if(color == colorRange.AMBER){
-                gd.setColor(Color.YELLOW);
+                sd.getPaint().setColor(Color.YELLOW);
             }else if(color == colorRange.NO_COLOR){
-                gd.setColor(Color.rgb(200,200,200));
+                sd.getPaint().setColor(Color.rgb(200,200,200));
+
             }
-            gd.setCornerRadius(5);
-            gd.setStroke(4, Color.rgb(255, 255, 255));
-            return gd;
+            return sd;
         }
         public void changeRangeCircleColor(colorRange color){
 //            if (color == colorRange.RED) {
