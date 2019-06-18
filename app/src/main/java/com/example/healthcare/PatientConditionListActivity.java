@@ -12,18 +12,33 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.healthcare.dummy.PatientListTitle;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Nullable;
 
 /**
  * An activity representing a list of PatientConditions. This activity
@@ -41,6 +56,7 @@ public class PatientConditionListActivity extends AppCompatActivity {
      */
     private boolean mTwoPane;
     private static FirebaseAuth mAuth;
+    private static String TAG = "patient_condition_list";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,7 +97,7 @@ public class PatientConditionListActivity extends AppCompatActivity {
             mTwoPane = true;
         }
 
-        View recyclerView = findViewById(R.id.patientcondition_list);
+        final View recyclerView = findViewById(R.id.patientcondition_list);
         assert recyclerView != null;
         setupRecyclerView((RecyclerView) recyclerView);
         if (!mTwoPane){
@@ -113,8 +129,159 @@ public class PatientConditionListActivity extends AppCompatActivity {
         mAuth.addAuthStateListener(listener);
     }
 
-    private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(this, PatientListTitle.ITEMS, mTwoPane));
+    private void setupRecyclerView(@NonNull final RecyclerView recyclerView) {
+        final PatientConditionListActivity parent = this;
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        FirebaseUser user = mAuth.getCurrentUser();
+        String doctorUID = user.getUid();
+        DocumentReference ref = db.document("users/"+doctorUID);
+        ref.addSnapshotListener(new EventListener<DocumentSnapshot>() {
+            @Override
+            public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
+                if (documentSnapshot.exists()){
+                    List<String> patientUIDs;
+                    try {
+                        patientUIDs = (List<String>) documentSnapshot.get("patients");
+                    }
+                    catch (Exception ex){
+                        patientUIDs = new ArrayList<>();
+                        Log.e(TAG,"Cannot fetch patients or No patient: ", ex);
+                    }
+                    if (patientUIDs != null && patientUIDs.size()>0) {
+                        for (final String patientUID : patientUIDs) {
+                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+                            if (!PatientListTitle.ITEM_MAP.containsKey(patientUID)) {
+                                final DocumentReference patientConditionRef = db.document("users/" + patientUID +
+                                        "/action/patientConditions");
+                                patientConditionRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
+                                    @Override
+                                    public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
+                                        if (documentSnapshot.exists()){
+                                            final PatientListTitle.DummyItem patient;
+                                            if (!PatientListTitle.ITEM_MAP.containsKey(patientUID)){
+                                                patient = PatientListTitle.addItem(patientUID,null,null);
+                                                patient.setPosition(PatientListTitle.ITEMS.indexOf(patient));
+                                            }else{
+                                                patient = PatientListTitle.ITEM_MAP.get(patientUID);
+                                            }
+                                            String latestUpdateTime = documentSnapshot.getString("latestUpdateTime");
+                                            HashMap<String,Object> recentCondition = (HashMap<String,Object>) documentSnapshot.getData().get(latestUpdateTime);
+                                            if (recentCondition.containsKey("changedRange")) {
+                                                List<String> changedRanges = (List<String>) recentCondition.get("changedRange");
+                                                if (changedRanges != null && changedRanges.size() > 0 && recentCondition.containsKey("ranges")) {
+                                                    for (String changedRange : changedRanges) {
+                                                        HashMap<String, String> ranges = (HashMap<String, String>) recentCondition.get("ranges");
+                                                        if (ranges != null && ranges.containsKey(changedRange)) {
+                                                            String color = ranges.get(changedRange);
+                                                            if (color != null){
+                                                                colorRange conditionColor =colorRange.valueOf(color.toUpperCase());
+                                                                patient.setConditionColor(conditionColor);
+                                                            }
+
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+                                            DocumentReference patientRef = db.document("users/" + patientUID);
+                                            patientRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                                                @Override
+                                                public void onSuccess(DocumentSnapshot documentSnapshot) {
+                                                    String patientName = documentSnapshot.getString("firstName") +
+                                                            " " + documentSnapshot.getString("lastName");
+                                                    patient.setPatientName(patientName);
+                                                    recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(parent, PatientListTitle.ITEMS, mTwoPane));
+                                                }
+                                            });
+                                            Log.v(TAG,"patient: "+patient.getPatientName());
+
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+
+//                    recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(parent, PatientListTitle.ITEMS, mTwoPane));
+                }else{
+                    Log.e(TAG,"populate error, no such document");
+                }
+            }
+        });
+        /*ref.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                Log.v(TAG,"SET UP LISTENER");
+                if (task.isSuccessful()){
+                    List<String> patientUIDs;
+                    DocumentSnapshot documentSnapshot = task.getResult();
+                    try {
+                        patientUIDs = (List<String>) documentSnapshot.get("patients");
+                    }
+                    catch (Exception ex){
+                        patientUIDs = new ArrayList<>();
+                        Log.e(TAG,"Cannot fetch patients or No patient: ", ex);
+                    }
+                    if (patientUIDs != null && patientUIDs.size()>0) {
+                        for (final String patientUID : patientUIDs) {
+                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+                            if (!PatientListTitle.ITEM_MAP.containsKey(patientUID)) {
+                                final DocumentReference patientConditionRef = db.document("users/" + patientUID +
+                                        "/action/patientConditions");
+                                patientConditionRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                                        if (task.isSuccessful()){
+                                            final PatientListTitle.DummyItem patient;
+                                            DocumentSnapshot documentSnapshot = task.getResult();
+                                            if (!PatientListTitle.ITEM_MAP.containsKey(patientUID)){
+                                                patient = PatientListTitle.addItem(patientUID,null,null);
+                                                patient.setPosition(PatientListTitle.ITEMS.indexOf(patient));
+                                            }else{
+                                                patient = PatientListTitle.ITEM_MAP.get(patientUID);
+                                            }
+                                            String latestUpdateTime = documentSnapshot.getString("latestUpdateTime");
+                                            HashMap<String,Object> recentCondition = (HashMap<String,Object>) documentSnapshot.getData().get(latestUpdateTime);
+                                            if (recentCondition.containsKey("changedRange")) {
+                                                List<String> changedRanges = (List<String>) recentCondition.get("changedRange");
+                                                if (changedRanges != null && changedRanges.size() > 0 && recentCondition.containsKey("ranges")) {
+                                                    for (String changedRange : changedRanges) {
+                                                        HashMap<String, String> ranges = (HashMap<String, String>) recentCondition.get("ranges");
+                                                        if (ranges != null && ranges.containsKey(changedRange)) {
+                                                            String color = ranges.get(changedRange);
+                                                            if (color != null){
+                                                                colorRange conditionColor =colorRange.valueOf(color.toUpperCase());
+                                                                patient.setConditionColor(conditionColor);
+                                                            }
+
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            FirebaseFirestore db = FirebaseFirestore.getInstance();
+                                            DocumentReference patientRef = db.document("users/" + patientUID);
+                                            patientRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                                                @Override
+                                                public void onSuccess(DocumentSnapshot documentSnapshot) {
+                                                    String patientName = documentSnapshot.getString("firstName") +
+                                                            " " + documentSnapshot.getString("lastName");
+                                                    patient.setPatientName(patientName);
+                                                }
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+
+                    recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(parent, PatientListTitle.ITEMS, mTwoPane));
+                }else{
+                    Log.e(TAG,"populate error, no such document");
+                }
+            }
+        });*/
+
     }
 
     public static class SimpleItemRecyclerViewAdapter
@@ -164,16 +331,37 @@ public class PatientConditionListActivity extends AppCompatActivity {
         //populate	the	view hierarchy	within	the	ViewHolder	object	with	the	data	to	be	displayed
         @Override
         public void onBindViewHolder(final ViewHolder holder, int position) {
-            GradientDrawable gd = new GradientDrawable();
-            gd.setShape(GradientDrawable.OVAL);
-            gd.setColor(Color.rgb(134, 135, 255));
-            gd.setCornerRadius(5);
-            gd.setStroke(4, Color.rgb(255, 255, 255));
+            GradientDrawable gd = getRangeCircle(mValues.get(position).getConditionColor());
             holder.colorRangeView.setImageDrawable(gd);
             holder.patientNameView.setText(mValues.get(position).getPatientName());
 
             holder.itemView.setTag(mValues.get(position));
             holder.itemView.setOnClickListener(mOnClickListener);
+        }
+        private GradientDrawable getRangeCircle(colorRange color){
+            GradientDrawable gd = new GradientDrawable();
+            gd.setShape(GradientDrawable.OVAL);
+            if (color == colorRange.RED) {
+                gd.setColor(Color.RED);
+            }else if (color == colorRange.GREEN) {
+                gd.setColor(Color.GREEN);
+            }else if(color == colorRange.AMBER){
+                gd.setColor(Color.YELLOW);
+            }else if(color == colorRange.NO_COLOR){
+                gd.setColor(Color.rgb(200,200,200));
+            }
+            gd.setCornerRadius(5);
+            gd.setStroke(4, Color.rgb(255, 255, 255));
+            return gd;
+        }
+        public void changeRangeCircleColor(colorRange color){
+//            if (color == colorRange.RED) {
+//                gd.setColor(Color.RED);
+//            }else if (color == colorRange.GREEN) {
+//                gd.setColor(Color.GREEN);
+//            }else {
+//                gd.setColor(Color.YELLOW);
+//            }
         }
 
         @Override

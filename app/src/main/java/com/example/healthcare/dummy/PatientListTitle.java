@@ -34,11 +34,12 @@ public class PatientListTitle {
 //        }
 //    }
 
-    private static void addItem(final String patientUID, final colorRange conditionColor,
-                                final String patientName ) {
+    public static DummyItem addItem(final String patientUID, final colorRange conditionColor,
+                                final String patientName) {
         DummyItem item = new DummyItem(patientUID,conditionColor,patientName);
         ITEMS.add(item);
         ITEM_MAP.put(item.patientUID, item);
+        return item;
     }
 
 //    private static DummyItem createDummyItem(final String patientUID, final colorRange conditionColor,
@@ -60,8 +61,9 @@ public class PatientListTitle {
      */
     public static class DummyItem {
         private final String patientUID;
-        private final String patientName;
-        private final colorRange conditionColor;
+        private String patientName;
+        private colorRange conditionColor;
+        private int position;
 
         public DummyItem(final String patientUID, final colorRange conditionColor
                             , final String patientName) {
@@ -73,11 +75,24 @@ public class PatientListTitle {
             return patientUID;
         }
         public colorRange getConditionColor(){
+            if (this.conditionColor == null){
+                return colorRange.NO_COLOR;
+            }
             return this.conditionColor;
         }
         public String getPatientName(){
+            if (this.patientName == null){
+                return "DATA ERROR";
+            }
             return this.patientName;
         }
+        public int getPosition(){
+            return position;
+        }
+        public void setConditionColor(colorRange conditionColor){this.conditionColor=conditionColor;}
+        public void setPatientName(String patientName){this.patientName=patientName;}
+        public void setPosition(final int position){this.position=position;}
+
 
         @Override
         public String toString() {
