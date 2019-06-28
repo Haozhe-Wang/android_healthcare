@@ -16,6 +16,12 @@ import com.google.firebase.auth.*;
 
 
 import com.google.firebase.firestore.*;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.messaging.FirebaseMessagingService;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
@@ -42,24 +48,6 @@ public class MainActivity extends AppCompatActivity {
         emailField = findViewById(R.id.email);
         passwordField = findViewById(R.id.password);
     }
-    @Override
-    public void onStart(){
-        super.onStart();
-        listener =new FirebaseAuth.AuthStateListener() {
-
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-
-                if (user != null) {
-                    transitToDashboard();
-                    finish();
-                }
-            }
-        };
-        mAuth.addAuthStateListener(listener);
-    }
     private boolean validateForm() {
         boolean valid = true;
 
@@ -83,7 +71,6 @@ public class MainActivity extends AppCompatActivity {
     }
     public void transitToDashboard(){
         Intent i = new Intent(this,PatientConditionListActivity.class);
-//        i.putExtra("USER",user);
         startActivity(i);
     }
     public void errorInfoPopup(String text){
@@ -121,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
                             Log.d(TAG, "signInWithEmail:email and password authorized");
-                            FirebaseUser user = mAuth.getCurrentUser();
+                            final FirebaseUser user = mAuth.getCurrentUser();
                             findViewById(R.id.loading).setVisibility(View.GONE);
                             FirebaseFirestore db = FirebaseFirestore.getInstance();
                             DocumentReference ref = db.document("users/"+user.getUid());
@@ -142,6 +129,10 @@ public class MainActivity extends AppCompatActivity {
                                                                 "You can't use the app at the moment. " +
                                                                 "New feature is coming soon");
                                                         mAuth.signOut();
+                                                    }else {
+                                                        transitToDashboard();
+                                                        SendTokenToServer(user.getUid());
+                                                        finish();
                                                     }
                                                 } else {
                                                     errorInfoPopup("An error occurred when fetching user data, " +
@@ -171,8 +162,28 @@ public class MainActivity extends AppCompatActivity {
 //                            toast.show();
 //                            updateUI(null);
                         }
+                    }
+                });
 
-                        // ...
+    }
+
+    private void SendTokenToServer(final String UserID){
+
+        FirebaseInstanceId.getInstance().getInstanceId()
+                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
+                        if (!task.isSuccessful()) {
+                            Log.w(TAG, "getInstanceId(token) failed", task.getException());
+                            return;
+                        }
+
+                        // Get new Instance ID token
+                        String token = task.getResult().getToken();
+                        Map<String,String> registerMessage = new HashMap<>();
+                        registerMessage.put(ListenDBChange.ACTION,ListenDBChange.ACTION_REGISTER);
+                        registerMessage.put(ListenDBChange.TOKEN,token);
+                        SendByTCP.sendToken(registerMessage);
                     }
                 });
 
