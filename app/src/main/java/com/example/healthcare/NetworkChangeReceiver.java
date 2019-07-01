@@ -11,15 +11,17 @@ import android.util.Log;
 public class NetworkChangeReceiver extends BroadcastReceiver {
     private static final String TAG="network_receiver";
     private NetworkConnectivityType pre_connectivity=NetworkConnectivityType.NO_NETWORK;
-    private static String NETWORK_AVAILABLE="NETWORK_AVAILABLE";
+    public static String NETWORK_AVAILABLE="NETWORK_AVAILABLE";
     private LocalBroadcastManager broadcaster;
     public NetworkChangeReceiver(){
         super();
     }
+
     @Override
     public void onReceive(Context context, Intent intent) {
         NetworkConnectivityType status = getConnectivityStatus(context);
         Log.e(TAG, "network status"+status.toString());
+        broadcaster = LocalBroadcastManager.getInstance(context);
         if ("android.net.conn.CONNECTIVITY_CHANGE".equals(intent.getAction())) {
             if (status == NetworkConnectivityType.NO_NETWORK) {
                 Log.v(TAG,"network not connected");

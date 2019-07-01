@@ -1,5 +1,7 @@
 package com.example.healthcare.dummy;
 
+import android.support.annotation.NonNull;
+
 import com.example.healthcare.colorRange;
 
 import java.util.ArrayList;
@@ -25,17 +27,8 @@ public class PatientListTitle {
      */
     public static final Map<String, DummyItem> ITEM_MAP = new HashMap<String, DummyItem>();
 
-//    private static final int COUNT = 25;
-
-//    static {
-//        // Add some sample items.
-//        for (int i = 1; i <= COUNT; i++) {
-//            addItem(createDummyItem(i));
-//        }
-//    }
-
-    public static DummyItem addItem(final String patientUID, final colorRange conditionColor,
-                                final String patientName) {
+    public static DummyItem addItem(@NonNull final String patientUID, final colorRange conditionColor,
+                                    final String patientName) {
         DummyItem item = new DummyItem(patientUID,conditionColor,patientName);
         ITEMS.add(item);
         ITEM_MAP.put(item.patientUID, item);

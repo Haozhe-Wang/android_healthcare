@@ -25,10 +25,6 @@ public class ListenDBChange extends FirebaseMessagingService {
     private static final String TAG = "firebase_change_service";
     public static final String BROADCAST_ACTION_UPDATE = "UPDATE_DASHBOARD";
     public static final String BROADCAST_ACTION_NEW_TOKEN = "NEW_TOKEN";
-    public static final String ACTION="action";
-    public static final String ACTION_REGISTER="register";
-    public static final String ACTION_ACKNOWLEDGE="acknowledge";
-    public static final String TOKEN="token";
 
     private LocalBroadcastManager broadcaster;
 
@@ -40,7 +36,6 @@ public class ListenDBChange extends FirebaseMessagingService {
     @Override
     public void onCreate() {
         super.onCreate();
-        broadcaster = LocalBroadcastManager.getInstance(this);
     }
 
     @Override
@@ -51,6 +46,7 @@ public class ListenDBChange extends FirebaseMessagingService {
             String patientUID = message.get("updated_patient");
             Intent intent = new Intent(BROADCAST_ACTION_UPDATE);
             intent.putExtra("patientUID", patientUID);
+            broadcaster = LocalBroadcastManager.getInstance(this);
             broadcaster.sendBroadcast(intent);
             /*
             * TODO put the code after fetched user data from database
@@ -78,10 +74,6 @@ public class ListenDBChange extends FirebaseMessagingService {
     public void onNewToken(String token) {
         Log.v(TAG,"Received new token: "+token);
         broadcaster.sendBroadcast(new Intent(BROADCAST_ACTION_NEW_TOKEN));
-//        Map<String,String> registerMessage = new HashMap<>();
-//        registerMessage.put(ACTION,ACTION_REGISTER);
-//        registerMessage.put(TOKEN,token);
-//        SendByTCP.sendToken(registerMessage);
     }
 
 }

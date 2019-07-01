@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
                                                         mAuth.signOut();
                                                     }else {
                                                         transitToDashboard();
-                                                        SendTokenToServer(user.getUid());
+                                                        SendByTCP.SendTokenToDB(user.getUid());
                                                         finish();
                                                     }
                                                 } else {
@@ -162,28 +162,6 @@ public class MainActivity extends AppCompatActivity {
 //                            toast.show();
 //                            updateUI(null);
                         }
-                    }
-                });
-
-    }
-
-    private void SendTokenToServer(final String UserID){
-
-        FirebaseInstanceId.getInstance().getInstanceId()
-                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
-                        if (!task.isSuccessful()) {
-                            Log.w(TAG, "getInstanceId(token) failed", task.getException());
-                            return;
-                        }
-
-                        // Get new Instance ID token
-                        String token = task.getResult().getToken();
-                        Map<String,String> registerMessage = new HashMap<>();
-                        registerMessage.put(ListenDBChange.ACTION,ListenDBChange.ACTION_REGISTER);
-                        registerMessage.put(ListenDBChange.TOKEN,token);
-                        SendByTCP.sendToken(registerMessage);
                     }
                 });
 
