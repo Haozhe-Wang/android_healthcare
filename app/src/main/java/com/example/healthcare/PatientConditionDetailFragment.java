@@ -9,7 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.example.healthcare.dummy.PatientListTitle;
+import com.example.healthcare.JavaFile.PatientListTitle;
 
 /**
  * A fragment representing a single PatientCondition detail screen.

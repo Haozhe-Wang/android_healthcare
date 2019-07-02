@@ -27,21 +27,16 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.example.healthcare.dummy.PatientListTitle;
+import com.example.healthcare.JavaFile.*;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 
@@ -49,8 +44,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.annotation.Nullable;
 
 /**
  * An activity representing a list of PatientConditions. This activity
@@ -294,7 +287,9 @@ public class PatientConditionListActivity extends AppCompatActivity {
                                         DocumentSnapshot documentSnapshot = task.getResult();
 
                                         patient = PatientListTitle.addItem(patientUID,null,null);
-                                        patient.setPosition(PatientListTitle.ITEMS.indexOf(patient));
+                                        if (patient.getPosition() < 0) {
+                                            patient.setPosition(PatientListTitle.ITEMS.indexOf(patient));
+                                        }
 
                                         String latestUpdateTime = documentSnapshot.getString("latestUpdateTime");
                                         HashMap<String,Object> recentCondition = (HashMap<String,Object>) documentSnapshot.getData().get(latestUpdateTime);
@@ -401,10 +396,11 @@ public class PatientConditionListActivity extends AppCompatActivity {
                             colorRange color = PatientConditionListActivity.getPatientConditionRange(ranges);
                             if (color != oldRangeColor) {
                                 patient.setConditionColor(color);
-//                                patient.setConditionColor(colorRange.NO_COLOR);
-                                String alertMessage = String.format("%s updated health condition\n\tLEVEL: %s --> %s",
-                                        patient.getPatientName(), oldRangeColor, color);
-                                alertInfoPopup(alertMessage, patientUID);
+                                if (color.getLevel()>oldRangeColor.getLevel()) {
+                                    String alertMessage = String.format("%s updated health condition\n\tLEVEL: %s --> %s",
+                                            patient.getPatientName(), oldRangeColor, color);
+                                    alertInfoPopup(alertMessage, patientUID);
+                                }
                                 dashBoardAdapter.updateView();
 //                                SendByTCP.sendAckToServer(mAuth.getCurrentUser().getUid(),latestUpdateTime);
                             }

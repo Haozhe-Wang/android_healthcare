@@ -1,4 +1,4 @@
-package com.example.healthcare;
+package com.example.healthcare.JavaFile;
 
 public enum colorRange{
   RED("red",3),AMBER("amber",2),GREEN("green",1),NO_COLOR("grey",0);

@@ -11,7 +11,8 @@
         android:id="@+id/app_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
+        android:theme="@style/AppTheme.AppBarOverlay"
+        android:background="@color/colorMainBlue">
 
         <!--<android.support.v7.widget.Toolbar-->
         <!--android:id="@+id/toolbar"-->
@@ -53,7 +54,9 @@
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <include layout="@layout/patientcondition_list" />
+        <include layout="@layout/patientcondition_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
     </FrameLayout>
 
     <android.support.design.widget.FloatingActionButton

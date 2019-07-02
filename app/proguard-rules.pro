@@ -1,21 +1,30 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+package com.example.healthcare.dummy;
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+import android.support.annotation.NonNull;
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+import com.example.healthcare.JavaFile.colorRange;
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Helper class for providing sample content for user interfaces created by
+ * Android template wizards.
+ * <p>
+ * TODO: Replace all uses of this class before publishing your app.
+ */
+public class PatientListTitle {
+
+    /**
+     * An array of sample (dummy) items.
+     */
+    public static final List<DummyItem> ITEMS = new ArrayList<DummyItem>();
+
+    /**
+     * A map of sample (dummy) items, by ID.
+     */
+    public static final Map<String, DummyItem> ITEM_MAP = new HashMap<String, DummyItem>();
+
+    publ

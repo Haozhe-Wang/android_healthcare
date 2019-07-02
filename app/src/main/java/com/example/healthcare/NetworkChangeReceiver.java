@@ -7,6 +7,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import com.example.healthcare.JavaFile.*;
 
 public class NetworkChangeReceiver extends BroadcastReceiver {
     private static final String TAG="network_receiver";

@@ -11,17 +11,12 @@ import android.view.*;
 import android.widget.*;
 import android.content.*;
 
+import com.example.healthcare.JavaFile.SendByTCP;
 import com.google.android.gms.tasks.*;
 import com.google.firebase.auth.*;
 
 
 import com.google.firebase.firestore.*;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
-import com.google.firebase.messaging.FirebaseMessagingService;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;

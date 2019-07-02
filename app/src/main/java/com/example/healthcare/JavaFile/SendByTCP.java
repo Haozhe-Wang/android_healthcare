@@ -1,4 +1,4 @@
-package com.example.healthcare;
+package com.example.healthcare.JavaFile;
 
 import android.support.annotation.NonNull;
 import android.util.Log;

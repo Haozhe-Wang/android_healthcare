@@ -1,8 +1,6 @@
-package com.example.healthcare.dummy;
+package com.example.healthcare.JavaFile;
 
 import android.support.annotation.NonNull;
-
-import com.example.healthcare.colorRange;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,10 +27,14 @@ public class PatientListTitle {
 
     public static DummyItem addItem(@NonNull final String patientUID, final colorRange conditionColor,
                                     final String patientName) {
-        DummyItem item = new DummyItem(patientUID,conditionColor,patientName);
-        ITEMS.add(item);
-        ITEM_MAP.put(item.patientUID, item);
-        return item;
+
+        if (!ITEM_MAP.containsKey(patientUID)) {
+            DummyItem item = new DummyItem(patientUID,conditionColor,patientName);
+            ITEMS.add(item);
+            ITEM_MAP.put(item.patientUID, item);
+            return item;
+        }
+        return ITEM_MAP.get(patientUID);
     }
 
 //    private static DummyItem createDummyItem(final String patientUID, final colorRange conditionColor,
@@ -63,6 +65,7 @@ public class PatientListTitle {
             this.patientUID = patientUID;
             this.conditionColor = conditionColor;
             this.patientName= patientName;
+            this.position =-1;
         }
         public String getPatientUID(){
             return patientUID;

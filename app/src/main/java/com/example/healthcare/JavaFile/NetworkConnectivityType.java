@@ -1,4 +1,4 @@
-package com.example.healthcare;
+package com.example.healthcare.JavaFile;
 
 public enum NetworkConnectivityType {
     NO_NETWORK(0){@Override public String toString(){return "no internet";}}
